@@ -2,12 +2,10 @@ use atat::{asynch::Client, Ingress, ResponseSlot, UrcChannel};
 use embassy_stm32::{bind_interrupts, peripherals::{self, PB12, PB13, UART5}, usart::{self, BufferedInterruptHandler, BufferedUart, BufferedUartRx, BufferedUartTx, Config as UConfig}};
 use static_cell::StaticCell;
 use atat::DefaultDigester;
-use crate::common::Urc;
+use crate::{common::Urc, INGRESS_BUF_SIZE, URC_CAPACITY, URC_CHANNEL, URC_SUBSCRIBERS};
 
 
-const INGRESS_BUF_SIZE: usize = 1024;
-const URC_CAPACITY: usize = 128;
-const URC_SUBSCRIBERS: usize = 3;
+
 
 pub type c_Ingress = Ingress<'static, DefaultDigester<Urc>, Urc, INGRESS_BUF_SIZE, URC_CAPACITY, URC_SUBSCRIBERS>;
 pub type LTE_Client = Client<'static, BufferedUartTx<'static>, INGRESS_BUF_SIZE>;
@@ -15,7 +13,7 @@ static INGRESS_BUF: StaticCell<[u8; INGRESS_BUF_SIZE]> = StaticCell::new();
 static TX_BUF: StaticCell<[u8; 16]> = StaticCell::new();
 static RX_BUF: StaticCell<[u8; 16]> = StaticCell::new();
 static RES_SLOT: ResponseSlot<INGRESS_BUF_SIZE> = ResponseSlot::new();
-static URC_CHANNEL: UrcChannel<Urc, URC_CAPACITY, URC_SUBSCRIBERS> = UrcChannel::new();
+
 static BUF: StaticCell<[u8; 1024]> = StaticCell::new();
 bind_interrupts!(struct LTEIrqs {
     UART5 => BufferedInterruptHandler<UART5>;

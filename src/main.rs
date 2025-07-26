@@ -7,13 +7,14 @@ mod task_fn;
 mod common;
 use core::sync::atomic::{AtomicU8, Ordering};
 
+use atat::{UrcChannel, UrcSubscription};
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel};
 use embassy_stm32::{exti::ExtiInput, peripherals, usart::{self, Uart,Config as UConfig}};
 #[cfg(not(feature = "defmt"))]
 use panic_halt as _;
 // use static_cell::StaticCell;
 
-use crate::{config_fn::{display_config::{display_spi_init, gps_view, lte_view, main_view, mqtt_view, sel_menu_view}, lte_config::lte_init}, task_fn::{lte_at_reader_task, lte_at_sender_task, user_click}};
+use crate::{common::Urc, config_fn::{display_config::{display_spi_init, gps_view, lte_view, main_view, mqtt_view, sel_menu_view}, lte_config::{lte_init}}, task_fn::{lte_at_reader_task, lte_at_sender_task, lte_at_urc_reader, user_click}};
 
 #[cfg(feature = "defmt")]
 use {defmt_rtt as _, panic_probe as _};
@@ -25,11 +26,13 @@ use embassy_time::{Duration, Timer};
 use embassy_stm32::{spi, Config};
 
 use fmt::info;
-
+const INGRESS_BUF_SIZE: usize = 1024;
+const URC_CAPACITY: usize = 128;
+const URC_SUBSCRIBERS: usize = 3;
 // bind_interrupts!(struct LTEIrqs {
 //     UART5 => usart::InterruptHandler<peripherals::UART5>;
 // });
-
+static URC_CHANNEL: UrcChannel<Urc, URC_CAPACITY, URC_SUBSCRIBERS> = UrcChannel::new();
 static mut GLOBAL_BUFFER: [u8; 512] = [0; 512];
 static APP_STATE: AtomicU8 = AtomicU8::new(0);
 // static CHANNEL: Channel<ThreadModeRawMutex, [u8; 8], 1> = Channel::new();
@@ -66,6 +69,8 @@ async fn main(spawner: Spawner) {
     let mut button: ExtiInput = ExtiInput::new(p.PB1, p.EXTI1, Pull::Down);
     let u_config = UConfig::default();
     let (mut client, mut ingress,mut reader) = lte_init(p.UART5,p.PB13,p.PB12).await;
+    let urc_sub = URC_CHANNEL.subscribe().unwrap();
+
     // let mut usart5 = Uart::new(p.UART5, , , LTEIrqs, p.DMA1_CH0, p.DMA1_CH1, u_config).unwrap();
     // let (mut tx, rx) = usart5.split();
     let b_led = Output::new(p.PA0, Level::High, Speed::Low);
@@ -84,6 +89,7 @@ async fn main(spawner: Spawner) {
     spawner.must_spawn(user_click(button));
     spawner.must_spawn(lte_at_reader_task(ingress,reader));
     spawner.must_spawn(lte_at_sender_task(client));
+    spawner.must_spawn(lte_at_urc_reader(urc_sub));
     let mut state_flag=0;
     loop {
         // info!("MAIN LOOP");

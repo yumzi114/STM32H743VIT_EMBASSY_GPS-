@@ -3,8 +3,9 @@ mod urc;
 
 use atat::atat_derive::AtatUrc;
 use atat::atat_derive::{AtatCmd, AtatResp};
-
-use crate::common::responses::{CSQResponse, CregResponse, ManufacturerId, ModelId, SoftwareVersion, WifiMac};
+use heapless::String;
+use crate::common::responses::{CSQResponse, CregResponse, CsmsResponse, ManufacturerId, ModelId, SoftwareVersion, WifiMac};
+use crate::common::urc::CmtiUrc;
 
 #[derive(Clone, AtatResp)]
 pub struct NoResponse;
@@ -13,10 +14,13 @@ pub struct NoResponse;
 #[at_cmd("", NoResponse, timeout_ms = 1000)]
 pub struct AT;
 
+
 #[derive(Clone, AtatUrc)]
 pub enum Urc {
     #[at_urc("+UMWI")]
     MessageWaitingIndication(urc::MessageWaitingIndication),
+    #[at_urc("+CMTI")]
+    SmsReceived(CmtiUrc),
 }
 
 
@@ -52,3 +56,16 @@ pub struct CSQ;
 #[derive(Clone, AtatCmd)]
 #[at_cmd("+CREG?", CregResponse)]
 pub struct Creg;
+
+
+#[derive(Clone, AtatCmd)]
+#[at_cmd("+CSMS?", CsmsResponse)]
+pub struct CsmsQuery;
+
+
+
+#[derive(Clone, AtatUrc)]
+pub enum SmsUrc {
+    #[at_urc("+CMTI")]
+    SmsReceived(CmtiUrc),
+}

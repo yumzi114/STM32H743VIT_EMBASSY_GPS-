@@ -17,7 +17,7 @@ dependencies = [
  "embassy-executor",
  "embassy-futures",
  "embassy-stm32",
- "embassy-sync 0.7.0",
+ "embassy-sync 0.6.2",
  "embassy-time",
  "embedded-graphics",
  "embedded-graphics-core",
@@ -467,7 +467,6 @@ checksum = "cef1a8a1ea892f9b656de0295532ac5d8067e9830d49ec75076291fd6066b136"
 dependencies = [
  "cfg-if",
  "critical-section",
- "defmt 1.0.1",
  "embedded-io-async",
  "futures-sink",
  "futures-util",

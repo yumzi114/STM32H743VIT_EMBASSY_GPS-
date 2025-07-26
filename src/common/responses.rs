@@ -54,3 +54,16 @@ pub struct CregResponse {
     #[at_arg(position = 4)]
     pub act: Option<u8>,
 }
+
+
+#[derive(Clone, AtatResp)]
+pub struct CsmsResponse {
+    #[at_arg(position = 0)]
+    pub service: u8, // 0 = no support, 1 = supported
+    #[at_arg(position = 1)]
+    pub mo: u8,      // Mobile Originated SMS
+    #[at_arg(position = 2)]
+    pub mt: u8,      // Mobile Terminated SMS
+}
+
+
