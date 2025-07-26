@@ -4,6 +4,7 @@
 mod fmt;
 mod config_fn;
 mod task_fn;
+mod common;
 use core::sync::atomic::{AtomicU8, Ordering};
 
 use embassy_sync::{blocking_mutex::raw::ThreadModeRawMutex, channel::Channel};
@@ -12,7 +13,7 @@ use embassy_stm32::{exti::ExtiInput, peripherals, usart::{self, Uart,Config as U
 use panic_halt as _;
 // use static_cell::StaticCell;
 
-use crate::{config_fn::{display_spi_init, gps_view, lte_view, main_view, mqtt_view, sel_menu_view}, task_fn::{lte_at_reader_task, user_click}};
+use crate::{config_fn::{display_config::{display_spi_init, gps_view, lte_view, main_view, mqtt_view, sel_menu_view}, lte_config::lte_init}, task_fn::{lte_at_reader_task, lte_at_sender_task, user_click}};
 
 #[cfg(feature = "defmt")]
 use {defmt_rtt as _, panic_probe as _};
@@ -25,13 +26,15 @@ use embassy_stm32::{spi, Config};
 
 use fmt::info;
 
-bind_interrupts!(struct LTEIrqs {
-    UART5 => usart::InterruptHandler<peripherals::UART5>;
-});
+// bind_interrupts!(struct LTEIrqs {
+//     UART5 => usart::InterruptHandler<peripherals::UART5>;
+// });
 
 static mut GLOBAL_BUFFER: [u8; 512] = [0; 512];
 static APP_STATE: AtomicU8 = AtomicU8::new(0);
-static CHANNEL: Channel<ThreadModeRawMutex, [u8; 8], 1> = Channel::new();
+// static CHANNEL: Channel<ThreadModeRawMutex, [u8; 8], 1> = Channel::new();
+
+
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -62,12 +65,13 @@ async fn main(spawner: Spawner) {
     let mut user_led = Output::new(p.PA1, Level::High, Speed::Low);
     let mut button: ExtiInput = ExtiInput::new(p.PB1, p.EXTI1, Pull::Down);
     let u_config = UConfig::default();
-    let mut usart5 = Uart::new(p.UART5, p.PB12, p.PB13, LTEIrqs, p.DMA1_CH0, p.DMA1_CH1, u_config).unwrap();
-    let (mut tx, rx) = usart5.split();
+    let (mut client, mut ingress,mut reader) = lte_init(p.UART5,p.PB13,p.PB12).await;
+    // let mut usart5 = Uart::new(p.UART5, , , LTEIrqs, p.DMA1_CH0, p.DMA1_CH1, u_config).unwrap();
+    // let (mut tx, rx) = usart5.split();
     let b_led = Output::new(p.PA0, Level::High, Speed::Low);
     // b_led.set_high();
     let (dc, rst, cs) = (p.PA3, p.PA2,p.PA4);
-    let mut buffer = [0_u8; 512];
+    // let mut buffer = [0_u8; 512];
     let mut dis= display_spi_init(
         p.SPI1,
         dc.into(), 
@@ -78,10 +82,11 @@ async fn main(spawner: Spawner) {
     ).await;
     
     spawner.must_spawn(user_click(button));
-    spawner.must_spawn(lte_at_reader_task(rx));
+    spawner.must_spawn(lte_at_reader_task(ingress,reader));
+    spawner.must_spawn(lte_at_sender_task(client));
     let mut state_flag=0;
     loop {
-        // info!("Hello, World!");
+        // info!("MAIN LOOP");
         // user_led.set_high();
         // // pins_mutex.fill_screen([0xFF, 0xFF, 0xFF]).await;
         // Timer::after(Duration::from_millis(1)).await;

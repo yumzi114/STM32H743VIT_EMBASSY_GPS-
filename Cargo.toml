@@ -30,6 +30,7 @@ embedded-hal-1 = { package = "embedded-hal", version = "1.0" }
 embedded-hal-bus = "0.3.0"
 profont = "0.7.0"
 atat = "0.24.1"
+atat_derive = "0.24.1"
 [[bin]]
 name = "STM32H743VIT_EMBASSY_GPS"
 test = false
