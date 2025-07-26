@@ -1,3 +1,5 @@
+use core::sync::atomic::AtomicU8;
+
 use embedded_graphics::{mono_font::MonoTextStyle, pixelcolor::Rgb666, prelude::{Point, Primitive, RgbColor, Size, WebColors}, primitives::{Line, PrimitiveStyle, PrimitiveStyleBuilder, Rectangle}, text::Text};
 use mipidsi::{interface::SpiInterface, options::{ColorOrder, Orientation, Rotation}, Display}; 
 use embassy_stm32::{ gpio::{AnyPin, Level, Output, Speed}, mode::Async, peripherals::{DMA1_CH2, DMA1_CH3,  PA5, PA6, PA7}, spi::{self, Spi}, time::mhz};
@@ -112,7 +114,11 @@ pub async fn gps_view(display: &mut Spi_Display){
         .draw( display)
         .unwrap();
 }
-pub async fn lte_view(display: &mut Spi_Display){
+pub async fn lte_view(
+    display: &mut Spi_Display,
+    crq_rssi : AtomicU8,
+    crq_ber : AtomicU8,
+){
     let content_head = MonoTextStyle::new(&PROFONT_18_POINT, Rgb666::WHITE);
     let r_style = PrimitiveStyleBuilder::new()
             .fill_color(Rgb666::BLACK) 

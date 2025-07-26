@@ -1,4 +1,4 @@
-use core::{borrow::BorrowMut, sync::atomic::Ordering};
+use core::{borrow::BorrowMut, sync::atomic::{AtomicU8, Ordering}};
 
 use atat::{asynch::AtatClient, AtatIngress, UrcChannel};
 use embassy_stm32::{exti::ExtiInput, mode::Async, usart::{BufferedUartRx, UartRx, UartTx}};

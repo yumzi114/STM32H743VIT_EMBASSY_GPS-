@@ -34,7 +34,13 @@ const URC_SUBSCRIBERS: usize = 3;
 // });
 static URC_CHANNEL: UrcChannel<Urc, URC_CAPACITY, URC_SUBSCRIBERS> = UrcChannel::new();
 static mut GLOBAL_BUFFER: [u8; 512] = [0; 512];
+
+
 static APP_STATE: AtomicU8 = AtomicU8::new(0);
+static LTE_ALL_STATE : AtomicU8= AtomicU8::new(0);
+static CRG_RSSI : AtomicU8= AtomicU8::new(0);
+static CRQ_BER : AtomicU8= AtomicU8::new(0);
+
 // static CHANNEL: Channel<ThreadModeRawMutex, [u8; 8], 1> = Channel::new();
 
 
@@ -85,7 +91,6 @@ async fn main(spawner: Spawner) {
         p.PA5, p.PA7,p.PA6,p.DMA1_CH3,p.DMA1_CH2,
         // buffer
     ).await;
-    
     spawner.must_spawn(user_click(button));
     spawner.must_spawn(lte_at_reader_task(ingress,reader));
     spawner.must_spawn(lte_at_sender_task(client));

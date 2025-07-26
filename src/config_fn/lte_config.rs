@@ -1,3 +1,5 @@
+use core::sync::atomic::AtomicU8;
+
 use atat::{asynch::Client, Ingress, ResponseSlot, UrcChannel};
 use embassy_stm32::{bind_interrupts, peripherals::{self, PB12, PB13, UART5}, usart::{self, BufferedInterruptHandler, BufferedUart, BufferedUartRx, BufferedUartTx, Config as UConfig}};
 use static_cell::StaticCell;
@@ -21,7 +23,20 @@ bind_interrupts!(struct LTEIrqs {
 // bind_interrupts!(struct LTEIrqs {
 //     UART5 => usart::InterruptHandler<peripherals::UART5>;
 // });
-
+// pub struct Lte_Info{
+//     pub all_state : AtomicU8,
+//     pub crq_rssi : AtomicU8,
+//     pub crq_ber : AtomicU8,
+// }
+// impl Lte_Info {
+//     pub fn new()->Self{
+//         Lte_Info{
+//             all_state:AtomicU8::new(0),
+//             crq_ber:AtomicU8::new(0),
+//             crq_rssi:AtomicU8::new(0)
+//         }
+//     }
+// }
 pub async fn lte_init(uart:UART5, tx:PB13, rx:PB12)
 ->(
     LTE_Client,
